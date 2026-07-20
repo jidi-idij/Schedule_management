@@ -58,4 +58,3 @@ export function chatWithAgent(message: string, history: ChatMessage[]): Promise<
     body: JSON.stringify({ message, history }),
   })
 }
-

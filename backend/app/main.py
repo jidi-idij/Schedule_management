@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,7 +11,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import agent, db
@@ -45,6 +46,29 @@ def remove_mark(mark_id: int):
         raise HTTPException(status_code=404, detail="标记不存在")
 
 
+@app.delete("/api/marks")
+def clear_all_marks():
+    """清空全部日程标记（初始化）。"""
+    deleted = db.clear_marks()
+    return {"deleted": deleted}
+
+
+@app.get("/api/export")
+def export_marks():
+    """导出全部日程标记为 JSON 文件。"""
+    marks = db.list_marks()
+    payload = {
+        "exported_at": datetime.now().isoformat(timespec="seconds"),
+        "count": len(marks),
+        "marks": marks,
+    }
+    filename = f"schedule-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    return JSONResponse(
+        content=payload,
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 # ---------- Agent 对话 API ----------
 
 @app.post("/api/agent/chat", response_model=AgentChatResponse)
@@ -76,3 +100,14 @@ if STATIC_DIR.is_dir():
         if full_path and file.is_file():
             return FileResponse(file)
         return FileResponse(STATIC_DIR / "index.html")
+PYEOF
+
+cat >> backend/app/db.py << 'PYEOF'
+
+
+def clear_marks() -> int:
+    """清空全部日程标记（初始化），返回删除条数。"""
+    conn = _get_conn()
+    with _lock, conn:
+        cur = conn.execute("DELETE FROM marks")
+    return cur.rowcount

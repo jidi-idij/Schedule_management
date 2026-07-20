@@ -1,14 +1,9 @@
-"""LangGraph Agent：通过工具调用完成日程的查看与标记。
-
-模型接入 Anthropic 兼容端点（如阿里云 DashScope），通过环境变量配置：
-- ANTHROPIC_BASE_URL   端点地址，如 https://dashscope.aliyuncs.com/apps/anthropic
-- ANTHROPIC_AUTH_TOKEN API Key
-- ANTHROPIC_MODEL      模型名，如 qwen3.6-flash
-"""
+"""LangGraph Agent：通过工具调用完成日程的查看、标记、清空与导出。"""
 from __future__ import annotations
 
+import json
 import os
-from datetime import date
+from datetime import date, datetime
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.tools import tool
@@ -48,15 +43,45 @@ def remove_schedule_mark(date_str: str, title: str) -> str:
     return f"{date_str} 没有找到包含「{title}」的标记。"
 
 
+@tool
+def clear_all_schedule(confirm: bool = False) -> str:
+    """清空全部日期的所有日程标记（初始化）。危险操作，必须传入 confirm=True 才会执行。"""
+    if not confirm:
+        return "未执行：清空全部日程是不可逆操作，需要用户明确确认后，以 confirm=True 重新调用。"
+    count = db.clear_marks()
+    return f"已清空全部日程，共删除 {count} 条标记。"
+
+
+@tool
+def export_schedule_json() -> str:
+    """导出全部日程标记为 JSON 文本，包含导出时间、总条数和完整标记列表。"""
+    marks = db.list_marks()
+    payload = {
+        "exported_at": datetime.now().isoformat(timespec="seconds"),
+        "count": len(marks),
+        "marks": marks,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
 SYSTEM_PROMPT = """你是一个日程管理助手，帮助用户查看日期上的日程标记、给日期添加或删除标记。
 
 规则：
 1. 所有日期使用 YYYY-MM-DD 格式；涉及「今天、明天、下周」等相对日期时，先调用 get_today_date 再推算。
 2. 查询单月日程时，区间取该月 1 日至月末。
 3. 用户只说「标记某日期」但未给内容时，先问清楚标记内容再调用 add_schedule_mark。
-4. 操作完成后用简洁的中文回复结果，不要输出工具调用的中间过程。"""
+4. 清空全部日程前必须先口头征得用户明确同意；只有用户在对话中明确说「确认/同意清空」后，才允许以 confirm=True 调用 clear_all_schedule。
+5. 用户要求导出数据时调用 export_schedule_json，把返回的 JSON 原样放在回复的代码块中。
+6. 操作完成后用简洁的中文回复结果，不要输出工具调用的中间过程。"""
 
-TOOLS = [get_today_date, list_schedule, add_schedule_mark, remove_schedule_mark]
+TOOLS = [
+    get_today_date,
+    list_schedule,
+    add_schedule_mark,
+    remove_schedule_mark,
+    clear_all_schedule,
+    export_schedule_json,
+]
 
 
 def _build_agent(llm):
@@ -77,7 +102,7 @@ _agent = None
 def _get_agent():
     global _agent
     if _agent is None:
-        token = os.environ.get("ANTHROPIC_AUTH_TOKEN", "sk-ws-H.RYDIHEI.lko8.MEUCIBfa4jz5s4x_eKTSvEab6m-xjrV9OZNu6M9S-JECmMmPAiEAukWscoqVYhoVjU8s5f27nY26zNjHIDdVBZZU2bAvaF8")
+        token = os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
         if not token or token == "xxx":
             raise RuntimeError(
                 "Agent 未配置：请设置环境变量 ANTHROPIC_AUTH_TOKEN（以及可选的 ANTHROPIC_BASE_URL、ANTHROPIC_MODEL）"

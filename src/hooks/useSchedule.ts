@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createMark, deleteMark, fetchMarks } from '@/api/client'
+import { clearAllMarks, createMark, deleteMark, fetchMarks } from '@/api/client'
 import type { MarkCreateInput, ScheduleMark } from '@/types'
 
 export function toDateStr(d: Date): string {
@@ -59,6 +59,12 @@ export function useSchedule() {
     [refresh],
   )
 
+  /** 清空全部日程标记（初始化） */
+  const clearAll = useCallback(async () => {
+    await clearAllMarks()
+    await refresh()
+  }, [refresh])
+
   const goToPrevMonth = useCallback(() => {
     setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   }, [])
@@ -100,6 +106,7 @@ export function useSchedule() {
     setSelectedDate,
     addMark,
     removeMark,
+    clearAll,
     refresh,
     goToPrevMonth,
     goToNextMonth,

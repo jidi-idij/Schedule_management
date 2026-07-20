@@ -1,5 +1,17 @@
 import { useState } from 'react'
-import { CalendarClock, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, Download, Eraser, Plus, Trash2 } from 'lucide-react'
+import { downloadExport } from '@/api/client'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -8,7 +20,7 @@ import type { useSchedule } from '@/hooks/useSchedule'
 type Schedule = ReturnType<typeof useSchedule>
 
 export default function DayDetail({ schedule }: { schedule: Schedule }) {
-  const { selectedDate, selectedMarks, addMark, removeMark } = schedule
+  const { selectedDate, selectedMarks, addMark, removeMark, clearAll } = schedule
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -30,11 +42,47 @@ export default function DayDetail({ schedule }: { schedule: Schedule }) {
     }
   }
 
+  const handleExport = async () => {
+    try {
+      await downloadExport()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '导出失败')
+    }
+  }
+
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
         <CalendarClock className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold">{selectedDate} 的日程</h2>
+        <div className="ml-auto flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => void handleExport()}>
+            <Download className="mr-1 h-4 w-4" />
+            导出 JSON
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                <Eraser className="mr-1 h-4 w-4" />
+                清空全部
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认清空全部日程？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  该操作会删除所有日期上的全部日程标记，且不可恢复。建议先点击「导出 JSON」备份数据。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={() => void clearAll()}>
+                  确认清空
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* 当日标记列表 */}

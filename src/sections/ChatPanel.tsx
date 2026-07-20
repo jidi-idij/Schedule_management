@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 type Schedule = ReturnType<typeof useSchedule>
 
-const SUGGESTIONS = ['帮我查看今天的日程', '把明天标记为「项目评审」', '这个月我都有哪些安排？']
+const SUGGESTIONS = ['帮我查看今天的日程', '把明天标记为「项目评审」', '导出我的日程数据', '清空所有日程']
 
 export default function ChatPanel({ schedule }: { schedule: Schedule }) {
   const { refresh } = schedule
