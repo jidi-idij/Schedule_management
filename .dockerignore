@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+backend/.env
+backend/schedule.db
+backend/__pycache__
+**/__pycache__
+*.pyc
