@@ -3,9 +3,11 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
+// https://vite.dev/config/
 export default defineConfig({
-  // 固定写法：仓库名，前后必须带斜杠
-  base: '/Schedule_management/',
+  // GitHub Pages 部署到子路径时通过 VITE_BASE 注入（如 /Schedule_management/），
+  // 本地开发和 Docker 部署保持默认 './'
+  base: process.env.VITE_BASE || './',
   plugins: [inspectAttr(), react()],
   server: {
     port: 3000,

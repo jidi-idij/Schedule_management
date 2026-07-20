@@ -4,7 +4,8 @@ import Home from './pages/Home'
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      {/* 使用 * 以兼容 GitHub Pages 子路径（如 /Schedule_management/）下的路由匹配 */}
+      <Route path="*" element={<Home />} />
     </Routes>
   )
 }
