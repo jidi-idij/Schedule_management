@@ -86,3 +86,11 @@ def delete_marks_by_title(date: str, title: str) -> int:
             "DELETE FROM marks WHERE date = ? AND title LIKE ?", (date, f"%{title}%")
         )
     return cur.rowcount
+
+
+def clear_marks() -> int:
+    """清空全部日程标记（初始化），返回删除条数。"""
+    conn = _get_conn()
+    with _lock, conn:
+        cur = conn.execute("DELETE FROM marks")
+    return cur.rowcount

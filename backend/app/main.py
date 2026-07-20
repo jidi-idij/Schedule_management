@@ -100,14 +100,3 @@ if STATIC_DIR.is_dir():
         if full_path and file.is_file():
             return FileResponse(file)
         return FileResponse(STATIC_DIR / "index.html")
-PYEOF
-
-cat >> backend/app/db.py << 'PYEOF'
-
-
-def clear_marks() -> int:
-    """清空全部日程标记（初始化），返回删除条数。"""
-    conn = _get_conn()
-    with _lock, conn:
-        cur = conn.execute("DELETE FROM marks")
-    return cur.rowcount
