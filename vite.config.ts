@@ -3,9 +3,8 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
-// https://vite.dev/config/
 export default defineConfig({
-  // 关键修改：仓库名称，前后斜杠不能丢
+  // 固定写法：仓库名，前后必须带斜杠
   base: '/Schedule_management/',
   plugins: [inspectAttr(), react()],
   server: {
